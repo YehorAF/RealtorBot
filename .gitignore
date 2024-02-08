@@ -1,0 +1,12 @@
+bin
+handlers/__pycache__
+include
+lib
+lib64
+logs/stat.logs
+settings/.env
+settings/cert.pem
+settings/key.pem
+tempdata/*
+tools/__pycache__
+pyvenv.cfg
