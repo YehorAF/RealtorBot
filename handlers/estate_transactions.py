@@ -525,7 +525,6 @@ async def select_appartment_conditions(
     )
 
     appartment_conditions = storage_data.get("appartment_condtions")
-    print(appartment_conditions)
 
     if appartment_conditions:
         for row in btns:
@@ -895,11 +894,11 @@ async def select_deadline(callback: CallbackQuery, state: FSMContext):
         description = f"\n\nДодаткова інформація: {description}"
 
     action = storage_data["action"]
-    uact = "заїхати" if action == "rent" else "придбати"
+    uact = "заїхати в" if action == "rent" else "придбати"
 
     await callback.message.edit_text(
         text=(
-            f"Які у Вас терміни для того, щоб {uact}?"
+            f"Які у Вас терміни для того, щоб {uact} квартиру?"
             f"(оберіть або напишіть точний термін){description}"
         ),
         reply_markup=InlineKeyboardMarkup(inline_keyboard=btns)
@@ -967,8 +966,8 @@ async def set_deadline_description(message: Message, state: FSMContext):
     storage_data = await state.update_data(
         {"deadline_description": description})
     action = storage_data["action"]
-    uact = "заїхати" if action == "rent" else "придбати"
-    text = (f"Які у Вас терміни для того, щоб {uact}?"
+    uact = "заїхати в" if action == "rent" else "придбати"
+    text = (f"Які у Вас терміни для того, щоб {uact} квартиру?"
             "(оберіть або напишіть точний термін)")
     deadline = storage_data.get("deadline")
     msg_id = storage_data["msg_id"]
@@ -1261,8 +1260,8 @@ async def set_agreement_description(message: Message, state: FSMContext):
 
     await message.bot.edit_message_text(
         text=(
-            "Чи готові ви до швидкої угоди, "
-            "чи вам треба спочатку продати свою нерухомість? "
+            "Ви готові до швидкої угоди "
+            "чи Вам треба спочатку продати свою нерухомість? "
             "(оберіть або напишіть додаткову інормацію)\n\n"
             f"Додаткова інформація: {description}"
         ),
@@ -1343,12 +1342,8 @@ async def choose_payment(
     payment = PAYMENTS[ind]
     st_payment = (await state.get_data()).get("payment")
 
-    print(payment, st_payment, payment == st_payment)
-
     if payment == st_payment:
         payment = ""
-
-    print(payment, st_payment, payment == st_payment)
 
     await state.update_data({"payment": payment})
 

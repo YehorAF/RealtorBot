@@ -37,7 +37,7 @@ async def get_job(
     await db.orders.update(
         {"_id": bson.ObjectId(order_id)}, {"status": "allowed"})
     await callback.message.edit_text(
-        text=callback.message.text + "\n\nСтатус: прийнято!"
+        text=callback.message.html_text + "\n\nСтатус: прийнято!"
     )
     await callback.bot.send_message(
         chat_id=customer_tg_id,
