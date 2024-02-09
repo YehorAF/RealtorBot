@@ -10,3 +10,4 @@ settings/key.pem
 tempdata/*
 tools/__pycache__
 pyvenv.cfg
+gcp
