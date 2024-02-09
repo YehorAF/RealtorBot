@@ -75,15 +75,16 @@ def form_request(data: dict[str, list | str | int]) -> str:
         f"Опис: {data.get('description')}\n"
         f"Дедлайн: {data.get('deadline') or '-'}\n"
         f"Опис дедлайну: {data.get('deadline_description') or '-'}\n"
-        f"Контактна інформація: {data.get('telephone')}"
     )
 
     if action == "buy":
         text += (
-            f"\nГотовність до угоди: {data.get('agreement') or '-'}\n"
+            f"Готовність до угоди: {data.get('agreement') or '-'}\n"
             f"Додаткова інформація до угоди: {data.get('agreement_description') or '-'}\n"
             f"Тип оплати: {data.get('payment') or '-'}\n"
-            f"Додатокова інформація про оплату: {data.get('payment_description') or '-'}"
+            f"Додатокова інформація про оплату: {data.get('payment_description') or '-'}\n"
         )
+
+    text += f"Контактна інформація: {data.get('telephone')}"
 
     return text

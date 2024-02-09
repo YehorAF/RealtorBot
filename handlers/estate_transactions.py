@@ -874,6 +874,9 @@ async def select_deadline(callback: CallbackQuery, state: FSMContext):
             if btn.text == deadline:
                 btn.text = "✅" + btn.text
 
+    action = storage_data["action"]
+    msg = "set_telephone_number" if action == "rent" else "select_agreement"
+
     btns += form_move_btns(
         callback_data=StateCallback,
         cancel_data_list={
@@ -883,7 +886,7 @@ async def select_deadline(callback: CallbackQuery, state: FSMContext):
             "action": "back", "msg": "set_description", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "set_telephone_number", "data": "next"
+            "action": "next", "msg": msg, "data": "next"
         }
     )
     description = storage_data.get("deadline_description") or ""
@@ -912,9 +915,10 @@ async def set_callback_deadline(
     callback_data: StateCallback,
     state: FSMContext
 ):
+    storage_data = await state.get_data()
     ind = int(callback_data.data)
     deadline = DEADLINES[ind]
-    st_deadline = (await state.get_data()).get("deadline")
+    st_deadline = storage_data.get("deadline")
 
     if deadline == st_deadline:
         deadline = ""
@@ -935,6 +939,9 @@ async def set_callback_deadline(
             if btn.text == deadline:
                 btn.text = "✅" + btn.text
 
+    action = storage_data["action"]
+    msg = "set_telephone_number" if action == "rent" else "select_agreement"
+
     btns += form_move_btns(
         callback_data=StateCallback,
         cancel_data_list={
@@ -944,7 +951,7 @@ async def set_callback_deadline(
             "action": "back", "msg": "set_description", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "set_telephone_number", "data": "next"
+            "action": "next", "msg": msg, "data": "next"
         }
     )
 
@@ -957,9 +964,8 @@ async def set_callback_deadline(
 async def set_deadline_description(message: Message, state: FSMContext):
     description = message.text
 
-    await state.update_data({"deadline_description": description})
-
-    storage_data = await state.get_data()
+    storage_data = await state.update_data(
+        {"deadline_description": description})
     action = storage_data["action"]
     uact = "заїхати" if action == "rent" else "придбати"
     text = (f"Які у Вас терміни для того, щоб {uact}?"
@@ -981,6 +987,9 @@ async def set_deadline_description(message: Message, state: FSMContext):
             if btn.text == deadline:
                 btn.text = "✅" + btn.text
 
+    action = storage_data["action"]
+    msg = "set_telephone_number" if action == "rent" else "select_agreement"
+
     btns += form_move_btns(
         callback_data=StateCallback,
         cancel_data_list={
@@ -990,7 +999,7 @@ async def set_deadline_description(message: Message, state: FSMContext):
             "action": "back", "msg": "set_description", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "set_telephone_number", "data": "next"
+            "action": "next", "msg": msg, "data": "next"
         }
     )
 
@@ -1018,28 +1027,39 @@ async def set_telephone_number_msg(
 ):
     await state.set_state(EstateTransactionStates.telephone)
     storage_data = await state.get_data()
+    action = storage_data["action"]
 
     if (not storage_data.get("deadline") and
-        not storage_data.get("deadline_description")):
+        not storage_data.get("deadline_description") and
+        action == "rent"):
         await state.set_state(EstateTransactionStates.deadline)
         await callback.answer(
             text="Вам необхідно внести дані про дедлайн або його опис",
             show_alert=True
         )
         return
+    elif (not storage_data.get("payment_description") and
+          not storage_data.get("payment") and 
+          action == "buy"):
+        await state.set_state(EstateTransactionStates.payment)
+        await callback.answer(
+            text="Вам необхідно внести тип оплати або його опис, щоб продовжити",
+            show_alert=True
+        )
+        return
 
-    action = storage_data["action"]
-    msg = "check_reference" if action == "rent" else "select_agreement"
+    msg = "select_deadline" if action == "rent" else "select_payment"
+
     btns = form_move_btns(
         callback_data=StateCallback,
         cancel_data_list={
             "action": "cancel", "msg": "cancel_ref", "data": "cancel"
         },
         back_data_list={
-            "action": "back", "msg": "select_deadline", "data": "back"
+            "action": "back", "msg": msg, "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": msg, "data": "next"
+            "action": "next", "msg": "check_reference", "data": "next"
         }
     )
     telephone = storage_data.get("telephone") or ""
@@ -1066,7 +1086,7 @@ async def set_telephone_number(message: Message, state: FSMContext):
     storage_data = await state.get_data()
     msg_id = storage_data["msg_id"]
     action = storage_data["action"]
-    msg = "check_reference" if action == "rent" else "select_agreement"
+    msg = "select_deadline" if action == "rent" else "select_payment"
 
     btns = form_move_btns(
         callback_data=StateCallback,
@@ -1074,10 +1094,10 @@ async def set_telephone_number(message: Message, state: FSMContext):
             "action": "cancel", "msg": "cancel_ref", "data": "cancel"
         },
         back_data_list={
-            "action": "back", "msg": "select_deadline", "data": "back"
+            "action": "back", "msg": msg, "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": msg, "data": "next"
+            "action": "next", "msg": "check_reference", "data": "next"
         }
     )
 
@@ -1103,10 +1123,11 @@ async def select_agreement(callback: CallbackQuery, state: FSMContext):
     await state.set_state(EstateTransactionStates.agreement)
     storage_data = await state.get_data()
 
-    if not storage_data.get("telephone"):
-        await state.set_state(EstateTransactionStates.telephone)
+    if (not storage_data.get("deadline") and
+        not storage_data.get("deadline_description")):
+        await state.set_state(EstateTransactionStates.deadline)
         await callback.answer(
-            text="Вам необхідно внести контактні дані, щоб продовжити далі",
+            text="Вам необхідно внести дані про дедлайн або його опис",
             show_alert=True
         )
         return
@@ -1132,7 +1153,7 @@ async def select_agreement(callback: CallbackQuery, state: FSMContext):
             "action": "cancel", "msg": "cancel_ref", "data": "cancel"
         },
         back_data_list={
-            "action": "back", "msg": "set_telephone_number", "data": "back"
+            "action": "back", "msg": "select_deadline", "data": "back"
         },
         next_data_list={
             "action": "next", "msg": "select_payment", "data": "next"
@@ -1189,7 +1210,7 @@ async def choose_agreement(
             "action": "cancel", "msg": "cancel_ref", "data": "cancel"
         },
         back_data_list={
-            "action": "back", "msg": "set_telephone_number", "data": "back"
+            "action": "back", "msg": "select_deadline", "data": "back"
         },
         next_data_list={
             "action": "next", "msg": "select_payment", "data": "next"
@@ -1231,7 +1252,7 @@ async def set_agreement_description(message: Message, state: FSMContext):
             "action": "cancel", "msg": "cancel_ref", "data": "cancel"
         },
         back_data_list={
-            "action": "back", "msg": "set_telephone_number", "data": "back"
+            "action": "back", "msg": "select_deadline", "data": "back"
         },
         next_data_list={
             "action": "next", "msg": "select_payment", "data": "next"
@@ -1295,7 +1316,7 @@ async def select_payment(callback: CallbackQuery, state: FSMContext):
             "action": "back", "msg": "select_agreement", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "check_reference", "data": "next"
+            "action": "next", "msg": "set_telephone_number", "data": "next"
         }
     )
     description = storage_data.get("payment_description") or ""
@@ -1354,7 +1375,7 @@ async def choose_payment(
             "action": "back", "msg": "select_agreement", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "check_reference", "data": "next"
+            "action": "next", "msg": "set_telephone_number", "data": "next"
         }
     )
 
@@ -1396,7 +1417,7 @@ async def set_agreement_description(message: Message, state: FSMContext):
             "action": "back", "msg": "select_agreement", "data": "back"
         },
         next_data_list={
-            "action": "next", "msg": "check_reference", "data": "next"
+            "action": "next", "msg": "set_telephone_number", "data": "next"
         }
     )
 
@@ -1430,15 +1451,6 @@ async def check_callback_reference(
         await state.set_state(EstateTransactionStates.telephone)
         await callback.answer(
             text="Вам необхідно внести контактні дані, щоб продовжити далі",
-            show_alert=True
-        )
-        return
-    elif (not data.get("payment_description") and
-          not data.get("payment") and 
-          data.get("action") == "buy"):
-        await state.set_state(EstateTransactionStates.payment)
-        await callback.answer(
-            text="Вам необхідно внести тип оплати або його опис, щоб продовжити",
             show_alert=True
         )
         return
